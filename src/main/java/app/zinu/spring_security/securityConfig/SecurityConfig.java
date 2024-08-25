@@ -23,22 +23,20 @@ public class SecurityConfig {
             .httpBasic(httpBasic -> {}) // Enable HTTP Basic authentication with default settings
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
-            .cors(cors -> 
-                cors.configurationSource(request -> new CorsConfiguration().applyPermitDefaultValues())
-            );
+            .userDetailsService(userDetailsService());
         return http.build();
     }
 
     public UserDetailsService userDetailsService(){
         UserDetails user1 = User.withUsername("user1")
-        .password("password")
-        .roles("USER")
-        .build();
-        
+                .password("{noop}password")
+                .roles("USER")
+                .build();
+                
         UserDetails admin = User.withUsername("admin")
-        .password("password")
-        .roles("ADMIN")
-        .build();
+                .password("{noop}password2")
+                .roles("ADMIN")
+                .build();
         
 
         return new InMemoryUserDetailsManager(user1, admin);
