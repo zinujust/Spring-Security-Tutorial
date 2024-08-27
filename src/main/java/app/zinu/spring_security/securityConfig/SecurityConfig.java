@@ -20,11 +20,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests((requests) -> requests.anyRequest().authenticated()) // Authorize all requests
+            .authorizeHttpRequests(requests -> 
+                requests.requestMatchers("/h2-console/**").permitAll()
+                .anyRequest().authenticated()) // Authorize all requests
             .httpBasic(httpBasic -> {}) // Enable HTTP Basic authentication with default settings
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
-            .userDetailsService(userDetailsService());
+            .userDetailsService(userDetailsService())
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin()));
+            http.csrf(csrf -> csrf.disable());
         return http.build();
     }
 
