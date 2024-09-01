@@ -4,6 +4,7 @@ import app.zinu.spring_security.Jwt.AuthEntryPointJwt;
 import app.zinu.spring_security.Jwt.AuthTokenFilter;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,7 +43,7 @@ public class SecurityConfig {
             requests
             -> requests.requestMatchers("/h2-console/**")
                    .permitAll()
-                   .requestMatchers("/api/signin")
+                   .requestMatchers("/signin")
                    .permitAll()
                    .anyRequest()
                    .authenticated()) // Authorize all requests
@@ -52,7 +53,7 @@ public class SecurityConfig {
                            -> session.sessionCreationPolicy(
                                SessionCreationPolicy
                                    .STATELESS)) // Stateless session management
-        .userDetailsService(userDetailsService())
+        // .userDetailsService(userDetailsService(dataSource))
         .exceptionHandling(
             exception
             -> exception.authenticationEntryPoint(unauthorizedHandler))
@@ -65,25 +66,31 @@ public class SecurityConfig {
     return http.build();
   }
 
-  public UserDetailsService userDetailsService() {
-    UserDetails user1 = User.withUsername("user1")
-                            .password(passwordencoder().encode("password"))
-                            .roles("USER")
-                            .build();
+  @Bean
+  public UserDetailsService userDetailsService(DataSource DataSource) {
+    return new JdbcUserDetailsManager(dataSource);
+  }
 
-    UserDetails admin = User.withUsername("admin")
-                            .password(passwordencoder().encode("password2"))
-                            .roles("ADMIN")
-                            .build();
+  @Bean
+  public CommandLineRunner initData(UserDetailsService userDetailsService) {
+    return arg -> {
+      JdbcUserDetailsManager manager =
+          (JdbcUserDetailsManager)userDetailsService;
+      UserDetails user1 = User.withUsername("user1")
+                              .password(passwordencoder().encode("password1"))
+                              .roles("USER")
+                              .build();
 
-    JdbcUserDetailsManager userDetailsmanager =
-        new JdbcUserDetailsManager(dataSource);
+      UserDetails admin = User.withUsername("admin")
+                              .password(passwordencoder().encode("password2"))
+                              .roles("ADMIN")
+                              .build();
 
-    userDetailsmanager.createUser(user1);
-    userDetailsmanager.createUser(admin);
-
-    return userDetailsmanager;
-    // return new InMemoryUserDetailsManager(user1, admin);
+      JdbcUserDetailsManager userDetailsManager =
+          new JdbcUserDetailsManager(dataSource);
+      userDetailsManager.createUser(user1);
+      userDetailsManager.createUser(admin);
+    };
   }
 
   @Bean
